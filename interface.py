@@ -1,6 +1,3 @@
-# interface.py
-# Version 3 - Interfaz grafica completa (Aeropuertos + Vuelos + Gates)
-
 import tkinter as tk
 from tkinter import ttk
 from tkinter import messagebox
