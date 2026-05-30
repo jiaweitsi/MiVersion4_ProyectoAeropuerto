@@ -942,18 +942,12 @@ def mostrar_grafico_en_interfaz(figura):
     global canvas_picture
     if canvas_picture is not None:
         canvas_picture.get_tk_widget().destroy()
-
-    # Reactiva el espacio de visualización
-    root.rowconfigure(1, weight=2)
-    panel_graficas.grid_propagate(False)
-
     figura.set_size_inches(8, 6)
     canvas_obj = FigureCanvasTkAgg(figura, master=panel_graficas)
     canvas_obj.draw()
     canvas_picture = canvas_obj
     widget = canvas_obj.get_tk_widget()
     widget.grid(row=0, column=0, padx=5, pady=5)
-    root.update_idletasks()
 
 def btn_borrar_grafica_click():
     global canvas_picture
