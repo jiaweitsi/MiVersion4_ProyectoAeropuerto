@@ -2,7 +2,9 @@ import matplotlib.pyplot as plt
 import matplotlib.patches as patches
 from aircraft import Aircraft
 from airport import IsSchengenAirport
-
+# -------------------------------------------------------
+# CLASES - Version 3 + 4
+# -------------------------------------------------------
 
 class Gate:
     def __init__(self, name):
@@ -491,16 +493,11 @@ def PlotDayOccupancy(bcn, aircrafts):
 
 #======FUNCIONES EXTRAS======
 # -------------------------------------------------------
-# FUNCIÓN SIMULACIÓN - Añadir al final de LEBL.py
+# FUNCIÓN SIMULACIÓN
 # -------------------------------------------------------
 
 def GetGateStateAtTime(bcn, aircrafts, time_str):
-    """
-    Devuelve el estado de todos los gates en un momento dado,
-    SIN modificar el estado real del aeropuerto.
-    Devuelve: lista de (terminal, area, gate_name, occupied, aircraft_id)
-    y el número de aviones presentes en ese instante.
-    """
+
     partes = time_str.split(":")
     hora_actual = int(partes[0])
     min_actual = int(partes[1])

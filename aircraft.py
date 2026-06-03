@@ -3,8 +3,7 @@ import matplotlib.pyplot as plt
 import math
 
 # -------------------------------------------------------
-# CLASE Aircraft - Version 4
-# Añadimos destination y departure_time respecto a V3
+# CLASE Aircraft - Version 2 + 4
 # -------------------------------------------------------
 
 class Aircraft:
@@ -23,6 +22,7 @@ class Aircraft:
 # FUNCIONES VERSION 2
 # -------------------------------------------------------
 
+#===== LOAD ARRIVALS =====
 def LoadArrivals(filename):
     lista_arrivals = []
     try:
@@ -48,7 +48,7 @@ def LoadArrivals(filename):
         return []
     return lista_arrivals
 
-
+#===== PLOT ARRIVALS =====
 def PlotArrivals(aircrafts):
 
     if len(aircrafts) == 0:
@@ -79,7 +79,7 @@ def PlotArrivals(aircrafts):
     return fig
 
 
-
+#===== SAVE FLIGHTS =====
 def SaveFlights(aircrafts, filename):
     if len(aircrafts) == 0:
         print("No existeix la llista")
@@ -109,11 +109,7 @@ def SaveFlights(aircrafts, filename):
         return False
 
 
-# -------------------------------------------------------
-# CORRECCION PlotAirlines - va en aircraft.py
-# Reemplaza la funcion PlotAirlines existente
-# -------------------------------------------------------
-
+#===== PLOT AIRLINES =====
 def PlotAirlines(aircrafts):
     if len(aircrafts) == 0:
         print("No existeix la llista")
@@ -174,6 +170,7 @@ def PlotAirlines(aircrafts):
     plt.tight_layout()
     return fig
 
+#===== PLOT FLIGHTS TYPE =====
 def PlotFlightsType(aircrafts):
     if len(aircrafts) > 0:
         schengen = 0
@@ -209,7 +206,7 @@ def PlotFlightsType(aircrafts):
     else:
         return None
 
-
+#===== MAP FLIGHTS =====
 def MapFlights(lista_arrivals, lista_airports):
     f = open("trayectorias.kml", "w")
 
@@ -291,7 +288,7 @@ def MapFlights(lista_arrivals, lista_airports):
     f.close()
     print("Archivo trayectorias.kml generado.")
 
-
+#===== LONG FLIGHT ARRIVALS =====
 def LongFlightArrivals(aircrafts, lista_aeropuertos):
     vuelos_largos = []
 
@@ -342,13 +339,11 @@ def LongFlightArrivals(aircrafts, lista_aeropuertos):
 # FUNCIONES VERSION 4
 # -------------------------------------------------------
 
+#===== LOAD DEPARTURES =====
 def LoadDepartures(filename):
     # Carga el archivo de salidas y devuelve lista de Aircraft
     # Solo rellena: aircraft, company, destination, departure_time
-    # Si no existe devuelve lista vacia
-
     lista_departures = []
-
     try:
         f = open(filename, "r")
         lineas = f.readlines()
@@ -374,7 +369,7 @@ def LoadDepartures(filename):
 
     return lista_departures
 
-
+#===== MERGE MOVEMENTS =====
 def MergeMovements(arrivals, departures):
     # Combina listas de llegadas y salidas por ID de avion
     # Si los tiempos son compatibles (llegada < salida) se fusionan
@@ -430,6 +425,7 @@ def MergeMovements(arrivals, departures):
 
     return merged
 
+#===== NIGHT AIRCRAFT =====
 
 def NightAircraft(aircrafts):
     # Devuelve lista de aviones que solo tienen salida (sin llegada)
@@ -450,4 +446,149 @@ def NightAircraft(aircrafts):
 
     return nocturnos
 
+# -------------------------------------------------------
+# FUNCIONES EXTRA
+# -------------------------------------------------------
 
+def PlotTAT(aircrafts):
+    if len(aircrafts) == 0:
+        print("No hay vuelos cargados")
+        return None
+
+    # Calcular TAT para cada avión que tenga llegada Y salida
+    ids    = []
+    minutos = []
+
+    i = 0
+    while i < len(aircrafts):
+        ac = aircrafts[i]
+        if ac.time != "" and ac.departure_time != "":
+            try:
+                p_arr = ac.time.split(":")
+                p_dep = ac.departure_time.split(":")
+                total_arr = int(p_arr[0]) * 60 + int(p_arr[1])
+                total_dep = int(p_dep[0]) * 60 + int(p_dep[1])
+                tat = total_dep - total_arr
+                if tat > 0:           # descartamos datos inconsistentes
+                    ids.append(ac.aircraft)
+                    minutos.append(tat)
+            except:
+                pass
+        i += 1
+
+    if len(minutos) == 0:
+        print("No hay aviones con llegada y salida registradas")
+        return None
+
+    # ── Top 10 ────────────────────────────────────────────────────
+    # Ordenar de mayor a menor (bubble sort para no usar sorted())
+    top_ids = list(ids)
+    top_min = list(minutos)
+    n = len(top_ids)
+    j = 0
+    while j < n - 1:
+        k = 0
+        while k < n - j - 1:
+            if top_min[k] < top_min[k + 1]:
+                top_min[k], top_min[k + 1] = top_min[k + 1], top_min[k]
+                top_ids[k], top_ids[k + 1] = top_ids[k + 1], top_ids[k]
+            k += 1
+        j += 1
+
+    if len(top_ids) > 10:
+        top_ids = top_ids[:10]
+        top_min = top_min[:10]
+
+    # Convertir minutos a horas y minutos para etiquetas
+    top_labels = []
+    i = 0
+    while i < len(top_min):
+        h = top_min[i] // 60
+        m = top_min[i] % 60
+        top_labels.append(str(h) + "h " + str(m) + "m")
+        i += 1
+
+    # ── Figura con 2 subplots ─────────────────────────────────────
+    fig, (ax1, ax2) = plt.subplots(1, 2, figsize=(12, 5))
+    fig.suptitle("Turnaround Time (TAT) — Tiempo en tierra",
+                 fontsize=12, fontweight="bold", color="#3D2B5A")
+
+    # — Subplot 1: histograma —
+    # Calcular bins manualmente
+    min_val = minutos[0]
+    max_val = minutos[0]
+    for v in minutos:
+        if v < min_val:
+            min_val = v
+        if v > max_val:
+            max_val = v
+
+    num_bins = 10
+    ancho = (max_val - min_val) / num_bins if max_val != min_val else 1
+    bins_x  = []
+    bins_y  = []
+    b = 0
+    while b < num_bins:
+        lim_inf = min_val + b * ancho
+        lim_sup = min_val + (b + 1) * ancho
+        bins_x.append(lim_inf + ancho / 2)   # centro del bin
+        cuenta = 0
+        for v in minutos:
+            if lim_inf <= v < lim_sup:
+                cuenta += 1
+        # último bin incluye el máximo
+        if b == num_bins - 1:
+            for v in minutos:
+                if v == max_val:
+                    cuenta += 1
+        bins_y.append(cuenta)
+        b += 1
+
+    etiq_x = []
+    for cx in bins_x:
+        h = int(cx) // 60
+        m = int(cx) % 60
+        etiq_x.append(str(h) + "h" + str(m).zfill(2))
+
+    ax1.bar(range(num_bins), bins_y,
+            color="#9B7EC8", edgecolor="#5C3D8F", alpha=0.85, width=0.7)
+    ax1.set_xticks(range(num_bins))
+    ax1.set_xticklabels(etiq_x, rotation=45, ha="right", fontsize=7)
+    ax1.set_title("Distribución de tiempos en tierra", fontsize=10)
+    ax1.set_xlabel("Tiempo en tierra")
+    ax1.set_ylabel("Número de aviones")
+    ax1.set_facecolor("#FDFBFF")
+
+    # Línea de media
+    media = sum(minutos) / len(minutos)
+    media_bin = (media - min_val) / ancho if ancho > 0 else 0
+    ax1.axvline(x=media_bin, color="#E05C3A", linestyle="--",
+                linewidth=1.5, label="Media: " + str(int(media // 60)) +
+                "h " + str(int(media % 60)) + "m")
+    ax1.legend(fontsize=8)
+
+    # — Subplot 2: ranking top 10 —
+    colores_barras = ["#5C3D8F", "#7A52B5", "#9B7EC8",
+                      "#B8A0D8", "#D4C5E8", "#E4D9F5",
+                      "#C8DCF0", "#A8C8EC", "#7AAEE0", "#4A8ECF"]
+
+    barras = ax2.barh(range(len(top_ids)), top_min,
+                      color=colores_barras[:len(top_ids)],
+                      edgecolor="#3D2B5A", alpha=0.88)
+    ax2.set_yticks(range(len(top_ids)))
+    ax2.set_yticklabels(top_ids, fontsize=8)
+    ax2.invert_yaxis()   # el mayor arriba
+    ax2.set_title("Top " + str(len(top_ids)) +
+                  " aviones con más tiempo en tierra", fontsize=10)
+    ax2.set_xlabel("Minutos en tierra")
+    ax2.set_facecolor("#FDFBFF")
+
+    # Etiquetas de valor al final de cada barra
+    i = 0
+    while i < len(barras):
+        ax2.text(top_min[i] + 1, i, top_labels[i],
+                 va="center", fontsize=7, color="#3D2B5A")
+        i += 1
+
+    plt.tight_layout(rect=[0, 0, 1, 0.93])
+    return fig
