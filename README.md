@@ -1,4 +1,4 @@
-Video Aeropuerto con versiones extras: 
+Video Aeropuerto con versiones extras que he hecho de forma individual y separada del grupo: 
 https://drive.google.com/file/d/1jQ1U0k5Jf1F7mf8JkL8bHT3BQpirVagY/view?usp=sharing
 
 Funciones extra:
